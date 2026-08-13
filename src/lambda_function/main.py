@@ -3,8 +3,14 @@ import os
 import urllib.parse
 import boto3
 
-# Inicializar clientes
-endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+# Detect endpoint dinamycally for LocalStack
+localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "localhost")
+default_endpoint = f"http://{localstack_host}:4566"
+endpoint_url = os.getenv("AWS_ENDPOINT_URL", default_endpoint)
+
+# Force endpoint if we are in LocalStack environment
+if "AWS_LAMBDA_FUNCTION_NAME" in os.environ and not endpoint_url:
+    endpoint_url = default_endpoint
 
 s3_client = boto3.client("s3", endpoint_url=endpoint_url)
 dynamodb = boto3.resource("dynamodb", endpoint_url=endpoint_url)

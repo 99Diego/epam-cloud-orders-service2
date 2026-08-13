@@ -36,12 +36,13 @@ resource "aws_lambda_function" "order_processor" {
       DYNAMODB_TABLE_NAME = "orders"
       SQS_QUEUE_URL       = "http://host.docker.internal:4566/000000000000/orders-dlq"
       AWS_ENDPOINT_URL    = "http://host.docker.internal:4566"
+      LOCALSTACK_HOSTNAME = "localhost"
     }
   }
 }
 
 
-# Permiso para que S3 pueda invocar a Lambda
+# Permission to S3 calls Lambda
 resource "aws_lambda_permission" "allow_s3" {
   statement_id  = "AllowExecutionFromS3"
   action        = "lambda:InvokeFunction"
