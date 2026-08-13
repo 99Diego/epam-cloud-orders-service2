@@ -52,15 +52,16 @@ jobs:
     needs: lint-and-unit-test
     runs-on: ubuntu-latest
 
-    # Definir LocalStack como servicio nativo de GitHub Actions
+    # Define LocalStack as native service of GitHub Actions
     services:
       localstack:
-        image: localstack/localstack:latest
+        image: localstack/localstack:3.0.0
         ports:
           - 4566:4566
           - 4510-4559:4510-4559
         env:
-          LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT: '1'
+          SERVICES: s3, lambda, dynamodb, sqs
+          AWS_DEFAULT_REGION: us-east-1
 
     steps:
       - name: Checkout Repository
