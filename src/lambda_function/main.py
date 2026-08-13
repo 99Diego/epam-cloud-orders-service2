@@ -9,10 +9,8 @@ SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", "")
 
 def resolve_endpoint_url():
     """Determina el endpoint correcto para LocalStack en cualquier entorno CI/Docker."""
-    # Si viene explícito por variable de entorno y no es el hostname conflictivo
     endpoint_url = os.getenv("AWS_ENDPOINT_URL")
-    
-    # En entornos LocalStack legacy/local, localhost es más confiable que localhost.localstack.cloud
+
     if endpoint_url and "localhost.localstack.cloud" not in endpoint_url:
         return endpoint_url
 
