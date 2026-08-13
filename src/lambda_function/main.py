@@ -2,9 +2,8 @@ import json
 import os
 import urllib.parse
 import boto3
-from botocore.exceptions import ClientError
 
-# Inicializar clientes (LocalStack mapea las URLs internamente si se configura AWS_ENDPOINT_URL)
+# Inicializar clientes
 endpoint_url = os.getenv("AWS_ENDPOINT_URL")
 
 s3_client = boto3.client("s3", endpoint_url=endpoint_url)
@@ -58,7 +57,6 @@ def lambda_handler(event, context):
             if is_valid:
                 # 3. Guardar en DynamoDB
                 table = dynamodb.Table(DYNAMODB_TABLE_NAME)
-                # Convertir float a Decimal para compatibilidad con DynamoDB si aplica
                 table.put_item(Item=data)
                 print(f"Order {data['order_id']} saved successfully to DynamoDB.")
             else:
@@ -80,7 +78,7 @@ def send_to_dlq(payload: dict, reason: str):
         "reason": reason,
         "original_payload": payload
     }
-    
+
     if SQS_QUEUE_URL:
         sqs_client.send_message(
             QueueUrl=SQS_QUEUE_URL,

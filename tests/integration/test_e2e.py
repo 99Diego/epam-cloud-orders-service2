@@ -35,7 +35,7 @@ def test_integration_flow():
     # Verificar DynamoDB
     table = dynamodb.Table("orders")
     response = table.get_item(Key={"order_id": "ORD-TEST-001"})
-    
+
     assert "Item" in response, "ERROR: La orden válida no se guardó en DynamoDB."
     print("✅ Éxito: Orden válida guardada correctamente en DynamoDB.")
 
@@ -44,7 +44,7 @@ def test_integration_flow():
         "order_id": "ORD-TEST-BAD",
         "customer_id": "CUST-999",
         "items": [],  # Inválido: lista vacía
-        "total": -5.0 # Inválido: <= 0
+        "total": -5.0  # Inválido: <= 0
     }
 
     print("[+] Subiendo orden inválida a S3...")
@@ -67,7 +67,7 @@ def test_integration_flow():
     )
 
     assert "Messages" in messages_response, "ERROR: No se encontró mensaje en la DLQ de SQS."
-    
+
     body = json.loads(messages_response["Messages"][0]["Body"])
     assert "reason" in body, "ERROR: El mensaje en SQS no contiene la razón de falla."
     print(f"✅ Éxito: Orden inválida detectada en DLQ. Razón: {body['reason']}")
