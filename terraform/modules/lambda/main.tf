@@ -24,20 +24,22 @@ resource "aws_iam_role" "lambda_role" {
 }
 
 resource "aws_lambda_function" "order_processor" {
-  filename         = data.archive_file.lambda_zip.output_path
-  function_name    = var.function_name
+  filename         = "${path.module}/lambda_function.zip"
+  function_name    = "order-processor"
   role             = aws_iam_role.lambda_role.arn
   handler          = "main.lambda_handler"
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   runtime          = "python3.10"
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   environment {
     variables = {
-      DYNAMODB_TABLE_NAME = var.dynamodb_table_name
-      SQS_QUEUE_URL       = var.sqs_queue_url
+      DYNAMODB_TABLE_NAME = "orders"
+      SQS_QUEUE_URL       = "http://host.docker.internal:4566/000000000000/orders-dlq"
+      AWS_ENDPOINT_URL    = "http://host.docker.internal:4566"
     }
   }
 }
+
 
 # Permiso para que S3 pueda invocar a Lambda
 resource "aws_lambda_permission" "allow_s3" {
