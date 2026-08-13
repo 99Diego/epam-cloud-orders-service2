@@ -7,23 +7,28 @@ DYNAMODB_TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "orders")
 SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", "")
 
 
-def get_boto3_client(service_name):
-    """Obtiene cliente de boto3 usando el endpoint de LocalStack/AWS dinámicamente."""
+def resolve_endpoint_url():
+    """Determina el endpoint correcto para LocalStack en cualquier entorno CI/Docker."""
+    # Si viene explícito por variable de entorno y no es el hostname conflictivo
     endpoint_url = os.getenv("AWS_ENDPOINT_URL")
-    if not endpoint_url:
-        localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "localhost.localstack.cloud")
-        endpoint_url = f"http://{localstack_host}:4566"
+    
+    # En entornos LocalStack legacy/local, localhost es más confiable que localhost.localstack.cloud
+    if endpoint_url and "localhost.localstack.cloud" not in endpoint_url:
+        return endpoint_url
 
+    localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "localhost")
+    return f"http://{localstack_host}:4566"
+
+
+def get_boto3_client(service_name):
+    """Obtiene cliente de boto3 usando el endpoint resuelto."""
+    endpoint_url = resolve_endpoint_url()
     return boto3.client(service_name, endpoint_url=endpoint_url)
 
 
 def get_boto3_resource(service_name):
-    """Obtiene recurso de boto3 usando el endpoint de LocalStack/AWS dinámicamente."""
-    endpoint_url = os.getenv("AWS_ENDPOINT_URL")
-    if not endpoint_url:
-        localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "localhost.localstack.cloud")
-        endpoint_url = f"http://{localstack_host}:4566"
-
+    """Obtiene recurso de boto3 usando el endpoint resuelto."""
+    endpoint_url = resolve_endpoint_url()
     return boto3.resource(service_name, endpoint_url=endpoint_url)
 
 
@@ -64,21 +69,18 @@ def lambda_handler(event, context):
         object_key = urllib.parse.unquote_plus(record["s3"]["object"]["key"])
 
         try:
-            # 1. Obtener el archivo desde S3
+            print(f"Fetching object {object_key} from bucket {bucket_name}...")
             response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
             content = response["Body"].read().decode("utf-8")
             data = json.loads(content)
 
-            # 2. Validar
             is_valid, reason = validate_order(data)
 
             if is_valid:
-                # 3. Guardar en DynamoDB
                 table = dynamodb.Table(DYNAMODB_TABLE_NAME)
                 table.put_item(Item=data)
                 print(f"Order {data['order_id']} saved successfully to DynamoDB.")
             else:
-                # 4. Enviar a SQS DLQ
                 send_to_dlq(data, reason)
 
         except json.JSONDecodeError:
@@ -86,6 +88,7 @@ def lambda_handler(event, context):
         except Exception as e:
             print(f"Unhandled error processing {object_key}: {str(e)}")
             send_to_dlq({"file_key": object_key}, f"System error: {str(e)}")
+            raise e
 
     return {"statusCode": 200, "body": json.dumps("Processing complete")}
 

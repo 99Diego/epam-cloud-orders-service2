@@ -3,7 +3,6 @@ variable "sqs_queue_url" { type = string }
 variable "dynamodb_table_name" { type = string }
 variable "s3_bucket_arn" { type = string }
 
-# Compilar código python en un zip
 data "archive_file" "lambda_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../src/lambda_function"
@@ -35,12 +34,11 @@ resource "aws_lambda_function" "order_processor" {
     variables = {
       DYNAMODB_TABLE_NAME = var.dynamodb_table_name
       SQS_QUEUE_URL       = var.sqs_queue_url
-      AWS_ENDPOINT_URL    = "http://localhost.localstack.cloud:4566"
+      AWS_ENDPOINT_URL    = "http://localhost:4566"
     }
   }
 }
 
-# Permiso para que S3 pueda invocar la Lambda
 resource "aws_lambda_permission" "allow_s3" {
   statement_id  = "AllowExecutionFromS3"
   action        = "lambda:InvokeFunction"
