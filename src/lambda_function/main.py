@@ -3,21 +3,32 @@ import os
 import urllib.parse
 import boto3
 
-# Detect endpoint dinamycally for LocalStack
-localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "localhost")
-default_endpoint = f"http://{localstack_host}:4566"
-endpoint_url = os.getenv("AWS_ENDPOINT_URL", default_endpoint)
-
-# Force endpoint if we are in LocalStack environment
-if "AWS_LAMBDA_FUNCTION_NAME" in os.environ and not endpoint_url:
-    endpoint_url = default_endpoint
-
-s3_client = boto3.client("s3", endpoint_url=endpoint_url)
-dynamodb = boto3.resource("dynamodb", endpoint_url=endpoint_url)
-sqs_client = boto3.client("sqs", endpoint_url=endpoint_url)
-
 DYNAMODB_TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "orders")
 SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", "")
+
+
+def get_boto3_client(service_name):
+    """
+    Obtiene un cliente boto3 configurado correctamente para LocalStack o AWS real.
+    """
+    endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+    if not endpoint_url:
+        localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "host.docker.internal")
+        endpoint_url = f"http://{localstack_host}:4566"
+
+    return boto3.client(service_name, endpoint_url=endpoint_url)
+
+
+def get_boto3_resource(service_name):
+    """
+    Obtiene un recurso boto3 configurado correctamente para LocalStack o AWS real.
+    """
+    endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+    if not endpoint_url:
+        localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "host.docker.internal")
+        endpoint_url = f"http://{localstack_host}:4566"
+
+    return boto3.resource(service_name, endpoint_url=endpoint_url)
 
 
 def validate_order(data: dict) -> tuple[bool, str]:
@@ -47,6 +58,11 @@ def validate_order(data: dict) -> tuple[bool, str]:
 
 def lambda_handler(event, context):
     """Manejador principal invocado por eventos de S3."""
+    print(f"Received event: {json.dumps(event)}")
+
+    s3_client = get_boto3_client("s3")
+    dynamodb = get_boto3_resource("dynamodb")
+
     for record in event.get("Records", []):
         bucket_name = record["s3"]["bucket"]["name"]
         object_key = urllib.parse.unquote_plus(record["s3"]["object"]["key"])
@@ -80,6 +96,7 @@ def lambda_handler(event, context):
 
 def send_to_dlq(payload: dict, reason: str):
     """Helper para enviar órdenes fallidas a la cola SQS DLQ."""
+    sqs_client = get_boto3_client("sqs")
     dlq_payload = {
         "reason": reason,
         "original_payload": payload
