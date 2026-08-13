@@ -62,6 +62,8 @@ jobs:
           SERVICES: s3,lambda,dynamodb,sqs,iam
           LAMBDA_RUNTIME_EXECUTOR: local
           AWS_DEFAULT_REGION: us-east-1
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
 
     steps:
       - name: Checkout Repository
