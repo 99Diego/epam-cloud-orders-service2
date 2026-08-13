@@ -60,8 +60,10 @@ jobs:
           - 4510-4559:4510-4559
         env:
           SERVICES: s3,lambda,dynamodb,sqs,iam
-          LAMBDA_RUNTIME_EXECUTOR: local
           AWS_DEFAULT_REGION: us-east-1
+          # Configuraciones clave para arreglar la red del contenedor Lambda
+          LOCALSTACK_HOST: localhost.localstack.cloud
+          LAMBDA_DOCKER_NETWORK: bridge
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
 
