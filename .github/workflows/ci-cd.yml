@@ -71,11 +71,12 @@ jobs:
             --name localstack_main \
             -p 4566:4566 \
             -p 4510-4559:4510-4559 \
+            -e SERVICES=s3,lambda,dynamodb,sqs \
             -e LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT=1 \
             localstack/localstack:latest
 
-          # Waint until the service be ready
-          timeout 30s bash -c 'until curl -s http://localhost:4566/_localstack/health | grep "\"s3\": \"running\"\|\"s3\": \"available\""; do sleep 1; done'
+          # Wait 90 seconds until LocalStack responds.
+          timeout 90s bash -c 'until curl -s http://localhost:4566/_localstack/health | grep -q "\"s3\": \"running\"\|\"s3\": \"available\""; do sleep 2; done'
 
       - name: Deploy Infrastructure with Terraform (tflocal)
         run: |
