@@ -8,24 +8,20 @@ SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", "")
 
 
 def get_boto3_client(service_name):
-    """
-    Obtiene un cliente boto3 configurado correctamente para LocalStack o AWS real.
-    """
+    """Obtiene cliente de boto3 usando el endpoint de LocalStack/AWS dinámicamente."""
     endpoint_url = os.getenv("AWS_ENDPOINT_URL")
     if not endpoint_url:
-        localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "host.docker.internal")
+        localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "localhost.localstack.cloud")
         endpoint_url = f"http://{localstack_host}:4566"
 
     return boto3.client(service_name, endpoint_url=endpoint_url)
 
 
 def get_boto3_resource(service_name):
-    """
-    Obtiene un recurso boto3 configurado correctamente para LocalStack o AWS real.
-    """
+    """Obtiene recurso de boto3 usando el endpoint de LocalStack/AWS dinámicamente."""
     endpoint_url = os.getenv("AWS_ENDPOINT_URL")
     if not endpoint_url:
-        localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "host.docker.internal")
+        localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "localhost.localstack.cloud")
         endpoint_url = f"http://{localstack_host}:4566"
 
     return boto3.resource(service_name, endpoint_url=endpoint_url)

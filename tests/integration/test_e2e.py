@@ -33,7 +33,7 @@ def test_integration_flow():
     print("[+] Waiting for Lambda to process and save into DynamoDB...")
     table = dynamodb.Table("orders")
 
-    # Polling extendido a 30s (15 intentos x 2s) para cold starts de LocalStack
+    # Polling extendido
     item_found = False
     for i in range(15):
         time.sleep(2)
@@ -43,7 +43,7 @@ def test_integration_flow():
             print(f"✅ SUCCESS: Valid order saved correctly in DynamoDB (attempt {i+1}).")
             break
 
-    # Respaldo: Si la notificación S3 de LocalStack no disparó, invocamos la Lambda manualmente
+    # Respaldo: Invocación directa si el trigger de evento de S3 en LocalStack se demora
     if not item_found:
         print("[!] S3 trigger delayed in LocalStack, triggering Lambda directly as fallback...")
         s3_event = {
@@ -59,7 +59,6 @@ def test_integration_flow():
             InvocationType="RequestResponse",
             Payload=json.dumps(s3_event)
         )
-        # Bucle corto de reintento tras la invocación manual
         for _ in range(5):
             time.sleep(1)
             response = table.get_item(Key={"order_id": "ORD-TEST-001"})
@@ -74,8 +73,8 @@ def test_integration_flow():
     invalid_order = {
         "order_id": "ORD-TEST-BAD",
         "customer_id": "CUST-999",
-        "items": [],    # Invalid: empty list
-        "total": -5.0   # Invalid: <= 0
+        "items": [],    # Inválido: lista vacía
+        "total": -5.0   # Inválido: <= 0
     }
 
     print("[+] Uploading invalid order to S3...")
@@ -87,7 +86,6 @@ def test_integration_flow():
 
     time.sleep(3)
 
-    # Invocación de respaldo para orden inválida si no se procesa vía evento
     queue_url_response = sqs.get_queue_url(QueueName="orders-dlq")
     queue_url = queue_url_response["QueueUrl"]
 
