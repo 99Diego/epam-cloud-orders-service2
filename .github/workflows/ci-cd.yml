@@ -61,9 +61,7 @@ jobs:
         env:
           SERVICES: s3,lambda,dynamodb,sqs,iam
           AWS_DEFAULT_REGION: us-east-1
-          # Evita que el contenedor de la Lambda intente salir a buscar redes o imágenes externas
           LAMBDA_EXECUTOR: local
-          PROVIDER_OVERRIDE_LAMBDA: legacy
           DOCKER_HOST: unix:///var/run/docker.sock
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
