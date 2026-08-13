@@ -12,9 +12,9 @@ sqs = boto3.client("sqs", endpoint_url=ENDPOINT_URL, region_name=AWS_REGION)
 
 
 def test_integration_flow():
-    print("--- INICIANDO TEST DE INTEGRACIÓN E2E ---")
+    print("--- INITIALIZING INTEGRATION TEST E2E ---")
 
-    # 1. Caso Exitoso (Valid Order)
+    # 1. Valid Order
     valid_order = {
         "order_id": "ORD-TEST-001",
         "customer_id": "CUST-999",
@@ -22,32 +22,37 @@ def test_integration_flow():
         "total": 150.0
     }
 
-    print("[+] Subiendo orden válida a S3...")
+    print("[+] Uploading valid order to S3...")
     s3.put_object(
         Bucket="orders-inbound",
         Key="valid_order.json",
         Body=json.dumps(valid_order)
     )
 
-    # Esperar procesamiento asíncrono
-    time.sleep(3)
-
-    # Verificar DynamoDB
+    print("[+] Waiting for Lambda to process and save into DynamoDB...")
     table = dynamodb.Table("orders")
-    response = table.get_item(Key={"order_id": "ORD-TEST-001"})
+    
+    # Polling con reintentos para la ejecución asíncrona
+    item_found = False
+    for i in range(10):
+        time.sleep(1)
+        response = table.get_item(Key={"order_id": "ORD-TEST-001"})
+        if "Item" in response:
+            item_found = True
+            print(f"✅ SUCCESS: Valid order saved correctly in DynamoDB (attempt {i+1}).")
+            break
 
-    assert "Item" in response, "ERROR: La orden válida no se guardó en DynamoDB."
-    print("✅ Éxito: Orden válida guardada correctamente en DynamoDB.")
+    assert item_found, "ERROR: The valid order was not saved in DynamoDB after 10 seconds."
 
-    # 2. Caso Fallido (Invalid Order)
+    # 2. Invalid Order
     invalid_order = {
         "order_id": "ORD-TEST-BAD",
         "customer_id": "CUST-999",
-        "items": [],  # Inválido: lista vacía
-        "total": -5.0  # Inválido: <= 0
+        "items": [],  # Invalid: empty list
+        "total": -5.0  # Invalid: <= 0
     }
 
-    print("[+] Subiendo orden inválida a S3...")
+    print("[+] Uploading invalid order to S3...")
     s3.put_object(
         Bucket="orders-inbound",
         Key="invalid_order.json",
@@ -66,11 +71,11 @@ def test_integration_flow():
         WaitTimeSeconds=2
     )
 
-    assert "Messages" in messages_response, "ERROR: No se encontró mensaje en la DLQ de SQS."
+    assert "Messages" in messages_response, "ERROR: no messages found in DLQ of SQS."
 
     body = json.loads(messages_response["Messages"][0]["Body"])
-    assert "reason" in body, "ERROR: El mensaje en SQS no contiene la razón de falla."
-    print(f"✅ Éxito: Orden inválida detectada en DLQ. Razón: {body['reason']}")
+    assert "reason" in body, "ERROR: Message in SQS doesn't contain a failure reason."
+    print(f"✅ SUCCESS: DLQ captured invalid order. Reason: {body['reason']}")
 
 
 if __name__ == "__main__":
