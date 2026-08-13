@@ -65,6 +65,9 @@ jobs:
         run: |
           pip install localstack terraform-local boto3 pytest
 
+      - name: Pull LocalStack Docker Image
+        run: docker pull localstack/localstack:latest
+
       - name: Start LocalStack Container
         run: |
           docker run -d \
