@@ -52,6 +52,16 @@ jobs:
     needs: lint-and-unit-test
     runs-on: ubuntu-latest
 
+    # Definir LocalStack como servicio nativo de GitHub Actions
+    services:
+      localstack:
+        image: localstack/localstack:latest
+        ports:
+          - 4566:4566
+          - 4510-4559:4510-4559
+        env:
+          LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT: '1'
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -61,27 +71,13 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install LocalStack & Dependencies
+      - name: Install Tools & Dependencies
         run: |
-          pip install localstack terraform-local boto3 pytest
+          pip install terraform-local boto3 pytest
 
-      - name: Pull LocalStack Docker Image
-        run: docker pull localstack/localstack:latest
-
-      - name: Start LocalStack Container
+      - name: Verify LocalStack Health
         run: |
-          docker run -d \
-            --name localstack_main \
-            -p 4566:4566 \
-            -p 4510-4559:4510-4559 \
-            -e SERVICES=s3,lambda,dynamodb,sqs \
-            -e LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT=1 \
-            localstack/localstack:latest
-
-          # Wait until LocalStack Web/API server responds http 200 (max 60 sec)
-          echo "Waitin LocalStack reponds in http://localhost:4566..."
-          timeout 60s bash -c 'until [ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4566/_localstack/health)" "==" "200" ]; do sleep 2; done'
-          echo " LocalStack is ready and listening queries."
+          curl -s http://localhost:4566/_localstack/health
 
       - name: Deploy Infrastructure with Terraform (tflocal)
         run: |
