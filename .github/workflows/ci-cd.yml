@@ -30,6 +30,9 @@ jobs:
       - name: Run Unit Tests
         env:
           PYTHONPATH: .
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: mock_key
+          AWS_SECRET_ACCESS_KEY: mock_secret
         run: pytest tests/unit/
 
       - name: Setup Terraform
