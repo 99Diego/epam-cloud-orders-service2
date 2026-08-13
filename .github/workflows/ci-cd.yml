@@ -28,6 +28,8 @@ jobs:
         run: flake8 src/ tests/ --max-line-length=100 --ignore=E501,W503
 
       - name: Run Unit Tests
+        env:
+          PYTHONPATH: .
         run: pytest tests/unit/
 
       - name: Setup Terraform
