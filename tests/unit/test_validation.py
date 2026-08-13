@@ -1,4 +1,3 @@
-import pytest
 from src.lambda_function.main import validate_order
 
 
