@@ -78,8 +78,10 @@ jobs:
             -e LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT=1 \
             localstack/localstack:latest
 
-          # Wait 90 seconds until LocalStack responds.
-          timeout 90s bash -c 'until curl -s http://localhost:4566/_localstack/health | grep -q "\"s3\": \"running\"\|\"s3\": \"available\""; do sleep 2; done'
+          # Wait until LocalStack Web/API server responds http 200 (max 60 sec)
+          echo "Waitin LocalStack reponds in http://localhost:4566..."
+          timeout 60s bash -c 'until [ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4566/_localstack/health)" "==" "200" ]; do sleep 2; done'
+          echo " LocalStack is ready and listening queries."
 
       - name: Deploy Infrastructure with Terraform (tflocal)
         run: |
