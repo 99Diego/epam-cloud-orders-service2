@@ -1,6 +1,6 @@
 import json
-import time
 import os
+import time
 import boto3
 
 ENDPOINT_URL = os.getenv("AWS_ENDPOINT_URL", "http://localhost:4566")
@@ -31,7 +31,7 @@ def test_integration_flow():
 
     print("[+] Waiting for Lambda to process and save into DynamoDB...")
     table = dynamodb.Table("orders")
-    
+
     # Polling con reintentos para la ejecución asíncrona
     item_found = False
     for i in range(10):
