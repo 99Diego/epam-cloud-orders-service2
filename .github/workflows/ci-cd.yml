@@ -46,13 +46,12 @@ jobs:
           terraform fmt -check
           terraform init -backend=false
           terraform validate
-
+  
   integration-test:
     name: LocalStack E2E Test
     needs: lint-and-unit-test
     runs-on: ubuntu-latest
 
-    # Define LocalStack as native service of GitHub Actions
     services:
       localstack:
         image: localstack/localstack:3.0.0
@@ -60,11 +59,9 @@ jobs:
           - 4566:4566
           - 4510-4559:4510-4559
         env:
-          SERVICES: s3, lambda, dynamodb, sqs, iam
-          LAMBDA_EXECUTOR: local
+          SERVICES: s3,lambda,dynamodb,sqs,iam
+          LAMBDA_RUNTIME_EXECUTOR: local
           AWS_DEFAULT_REGION: us-east-1
-        volumes: 
-          - /var/run/docker.sock:/var/run/docker.sock
 
     steps:
       - name: Checkout Repository
@@ -83,11 +80,7 @@ jobs:
 
       - name: Install Tools & Dependencies
         run: |
-          pip install terraform-local boto3 pytest
-
-      - name: Verify LocalStack Health
-        run: |
-          curl -s http://localhost:4566/_localstack/health
+          pip install terraform-local boto3 pytest flake8
 
       - name: Deploy Infrastructure with Terraform (tflocal)
         run: |
@@ -103,3 +96,8 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
         run: |
           python tests/integration/test_e2e.py
+
+      - name: Print LocalStack Logs on Failure
+        if: failure()
+        run: |
+          docker logs $(docker ps -q -f ancestor=localstack/localstack:3.0.0)
