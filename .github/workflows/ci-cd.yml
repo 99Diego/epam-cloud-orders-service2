@@ -60,7 +60,7 @@ jobs:
           - 4566:4566
           - 4510-4559:4510-4559
         env:
-          SERVICES: s3, lambda, dynamodb, sqs
+          SERVICES: s3, lambda, dynamodb, sqs, iam
           AWS_DEFAULT_REGION: us-east-1
 
     steps:
