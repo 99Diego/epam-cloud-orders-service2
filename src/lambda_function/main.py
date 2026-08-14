@@ -76,7 +76,7 @@ def lambda_handler(event, context):
             print(f"Fetching object {object_key} from bucket {bucket_name}...")
             response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
             content = response["Body"].read().decode("utf-8")
-            
+
             # Convierte los floats en Decimal para compatibilidad directa con DynamoDB
             data = json.loads(content, parse_float=decimal.Decimal)
 
