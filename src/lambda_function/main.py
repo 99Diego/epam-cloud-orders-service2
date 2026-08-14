@@ -1,3 +1,4 @@
+import decimal
 import json
 import os
 import urllib.parse
@@ -54,7 +55,7 @@ def validate_order(data: dict) -> tuple[bool, str]:
     if not isinstance(items, list) or len(items) == 0:
         return False, "Invalid or missing 'items' (must be a non-empty list)"
 
-    if not isinstance(total, (int, float)) or total <= 0:
+    if not isinstance(total, (int, float, decimal.Decimal)) or total <= 0:
         return False, "Invalid or missing 'total' (must be a number > 0)"
 
     return True, ""
@@ -75,7 +76,9 @@ def lambda_handler(event, context):
             print(f"Fetching object {object_key} from bucket {bucket_name}...")
             response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
             content = response["Body"].read().decode("utf-8")
-            data = json.loads(content)
+            
+            # Convierte los floats en Decimal para compatibilidad directa con DynamoDB
+            data = json.loads(content, parse_float=decimal.Decimal)
 
             is_valid, reason = validate_order(data)
 
@@ -107,7 +110,7 @@ def send_to_dlq(payload: dict, reason: str):
     if SQS_QUEUE_URL:
         sqs_client.send_message(
             QueueUrl=SQS_QUEUE_URL,
-            MessageBody=json.dumps(dlq_payload)
+            MessageBody=json.dumps(dlq_payload, default=str)
         )
         print(f"Invalid order sent to DLQ. Reason: {reason}")
     else:
