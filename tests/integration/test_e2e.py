@@ -63,13 +63,13 @@ def test_integration_flow():
                 }
             ]
         }
-        
+
         lambda_client.invoke(
             FunctionName="order-processor",
             InvocationType="RequestResponse",
             Payload=json.dumps(s3_event)
         )
-        
+
         # Volver a verificar DynamoDB tras la invocación directa
         time.sleep(2)
         response = table.get_item(Key={"order_id": test_order["order_id"]})
