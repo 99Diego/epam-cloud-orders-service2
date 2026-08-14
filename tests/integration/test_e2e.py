@@ -51,6 +51,7 @@ def test_integration_flow():
         print(f"[-] Attempt {attempt}/{max_retries}: Item not in DynamoDB yet, retrying...")
 
     # 3. Fallback: Si el evento S3 no se disparó en LocalStack, invocar la Lambda manualmente
+    # 3. Fallback: Si el evento S3 no se disparó en LocalStack, invocar la Lambda manualmente
     if not item_found:
         print("[!] S3 trigger delayed in LocalStack, invoking Lambda directly as fallback...")
         s3_event = {
@@ -64,16 +65,20 @@ def test_integration_flow():
             ]
         }
 
-        lambda_client.invoke(
+        response = lambda_client.invoke(
             FunctionName="order-processor",
             InvocationType="RequestResponse",
             Payload=json.dumps(s3_event)
         )
 
+        # Imprimir logs/payload de respuesta de la Lambda para depuración
+        payload_res = response["Payload"].read().decode("utf-8")
+        print(f"[debug] Lambda Response: {payload_res}")
+
         # Volver a verificar DynamoDB tras la invocación directa
         time.sleep(2)
-        response = table.get_item(Key={"order_id": test_order["order_id"]})
-        if "Item" in response:
+        res_db = table.get_item(Key={"order_id": test_order["order_id"]})
+        if "Item" in res_db:
             print("[✓] Order successfully saved in DynamoDB after direct invocation!")
             item_found = True
 

@@ -34,7 +34,6 @@ resource "aws_lambda_function" "order_processor" {
     variables = {
       DYNAMODB_TABLE_NAME = var.dynamodb_table_name
       SQS_QUEUE_URL       = var.sqs_queue_url
-      AWS_ENDPOINT_URL    = "http://localhost:4566"
     }
   }
 }

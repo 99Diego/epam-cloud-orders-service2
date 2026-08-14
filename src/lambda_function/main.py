@@ -9,13 +9,18 @@ SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", "")
 
 def resolve_endpoint_url():
     """Determina el endpoint correcto para LocalStack en cualquier entorno CI/Docker."""
-    endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+    # 1. Si LocalStack inyectó LOCALSTACK_HOSTNAME (dentro del contenedor de la Lambda)
+    localstack_host = os.getenv("LOCALSTACK_HOSTNAME")
+    if localstack_host:
+        return f"http://{localstack_host}:4566"
 
-    if endpoint_url and "localhost.localstack.cloud" not in endpoint_url:
+    # 2. Si viene por variable explícita AWS_ENDPOINT_URL
+    endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+    if endpoint_url:
         return endpoint_url
 
-    localstack_host = os.getenv("LOCALSTACK_HOSTNAME", "localhost")
-    return f"http://{localstack_host}:4566"
+    # 3. Fallback por defecto
+    return "http://localhost:4566"
 
 
 def get_boto3_client(service_name):
