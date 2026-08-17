@@ -25,7 +25,7 @@ When an incoming order payload (JSON format) is uploaded to an Amazon S3 bucket,
 ---
 
 ## 3. Architecture Diagram
-![Diagram](images/diagram.png)
+![Diagram](diagram.png)
 
 ### Infrastructure Components
 - **S3 Bucket (orders-inbound)**: Stores incoming JSON order files.
@@ -38,7 +38,7 @@ When an incoming order payload (JSON format) is uploaded to an Amazon S3 bucket,
 ---
 
 ## 4. Project Structure
-![Structure](images/Structure.png)
+![Structure](Structure.png)
 
 ---
 
