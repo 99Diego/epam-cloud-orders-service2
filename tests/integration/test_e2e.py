@@ -20,8 +20,8 @@ def test_integration_flow():
     test_order = {
         "order_id": "ORD-E2E-999",
         "customer_id": "CUST-001",
-        "items": [{"item_id": "ITEM-1", "quantity": 2, "price": 50.0}],
-        "total": 100.0
+        "items": [{"item_id": "ITEM-1", "quantity": 2, "price": 50}],
+        "total": 100
     }
 
     object_key = "e2e_valid_order.json"
@@ -38,7 +38,7 @@ def test_integration_flow():
     table = dynamodb.Table(TABLE_NAME)
     item_found = False
     max_retries = 10
-    retry_interval = 2  # Esperar 2s entre intentos (hasta 20s total)
+    retry_interval = 2
 
     print("[+] Waiting for Lambda to process and save into DynamoDB...")
     for attempt in range(1, max_retries + 1):
@@ -50,7 +50,6 @@ def test_integration_flow():
             break
         print(f"[-] Attempt {attempt}/{max_retries}: Item not in DynamoDB yet, retrying...")
 
-    # 3. Fallback: Si el evento S3 no se disparó en LocalStack, invocar la Lambda manualmente
     # 3. Fallback: Si el evento S3 no se disparó en LocalStack, invocar la Lambda manualmente
     if not item_found:
         print("[!] S3 trigger delayed in LocalStack, invoking Lambda directly as fallback...")
@@ -71,11 +70,9 @@ def test_integration_flow():
             Payload=json.dumps(s3_event)
         )
 
-        # Imprimir logs/payload de respuesta de la Lambda para depuración
         payload_res = response["Payload"].read().decode("utf-8")
         print(f"[debug] Lambda Response: {payload_res}")
 
-        # Volver a verificar DynamoDB tras la invocación directa
         time.sleep(2)
         res_db = table.get_item(Key={"order_id": test_order["order_id"]})
         if "Item" in res_db:
