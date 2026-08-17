@@ -54,4 +54,3 @@ A User Story or Task is considered "Done" when:
 1. Lints Python & Terraform files.
 2. Spins up LocalStack, applies Terraform, and runs end-to-end integration tests.
 3. Automatically blocks PR merging if tests fail.
-
